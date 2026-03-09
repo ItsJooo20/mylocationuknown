@@ -1,0 +1,61 @@
+# .htaccess — My Location Unknown
+# Apache configuration for cPanel hosting.
+
+# ── Security: disable directory listing ──────────────────────────────────────
+Options -Indexes
+
+# ── Default index ─────────────────────────────────────────────────────────────
+DirectoryIndex index.php index.html
+
+# ── Pretty URL rewrites (requires mod_rewrite) ────────────────────────────────
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Allow direct access to existing files and directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # /share?lat=…&lng=… → share.php?lat=…&lng=…
+    RewriteRule ^share/?$ share.php [QSA,L]
+</IfModule>
+
+# ── Security headers ──────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    # Prevent MIME-type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Basic clickjacking protection
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Enable XSS filter in older browsers
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Referrer policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Only send HTTPS when accessed over HTTPS (safe to keep even on HTTP)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+</IfModule>
+
+# ── PHP settings (cPanel shared hosting) ─────────────────────────────────────
+<IfModule mod_php8.c>
+    php_value display_errors 0
+    php_value log_errors     1
+</IfModule>
+<IfModule mod_php7.c>
+    php_value display_errors 0
+    php_value log_errors     1
+</IfModule>
+
+# ── Compression ───────────────────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript
+</IfModule>
+
+# ── Cache static assets ───────────────────────────────────────────────────────
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css              "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+</IfModule>
